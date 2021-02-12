@@ -7,4 +7,18 @@ config USB_DEVICE_PID
 config USB_DEVICE_REMOTE_WAKEUP
 	default y if NRFX_USBD
 
+
+choice USB_RAZER_TYPE
+    bool "Usb razer type"
+    default MOUSE
+
+    config MOUSE
+        bool "mouse"
+
+    config HDK
+        bool "hdk"
+
+    config ARGB
+        bool "argb"
+endchoice
 source "Kconfig.zephyr"

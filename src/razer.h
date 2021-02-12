@@ -66,4 +66,7 @@ extern struct razer_context gContext;
 #define STATE_RUNNING 2
 #define STATE_START2 3
 
+bool get_report_hid(int reportID, char **report, int *len);
+
+
 #endif //HID_MOUSE_RAZER_H
