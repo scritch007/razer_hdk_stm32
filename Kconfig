@@ -10,7 +10,7 @@ config USB_DEVICE_REMOTE_WAKEUP
 
 choice USB_RAZER_TYPE
     bool "Usb razer type"
-    default MOUSE
+    default HDK
 
     config MOUSE
         bool "mouse"

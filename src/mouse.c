@@ -13,7 +13,7 @@
 #include "set_report.h"
 
 
-#if CONFIG_USB_RAZER_TYPE == MOUSE
+#if CONFIG_USB_RAZER_TYPE == 1
 
 static const uint8_t hid0_report_desc[] = {0x05, 0x01, 0x09, 0x02, 0xa1, 0x01, 0x09, 0x01, 0xa1, 0x00, 0x05, 0x09, 0x19,
                                            0x01, 0x29, 0x05,
@@ -249,6 +249,15 @@ static const uint8_t hid3_report_desc[] = {0x05, 0x59, 0x09, 0x01, 0xa1, 0x01, 0
                                            0x95, 0x3f, 0xb1, 0x02, 0xc0
 };
 
+const char serial[90] = {0x02, 0x08, 0x00, 0x00, 0x00, 0x16, 0x00, 0x82, 0x50, 0x4d, 0x32, 0x30, 0x30, 0x31, 0x48, 0x31,
+                         0x34,
+                         0x34, 0x33, 0x38,
+                         0x36, 0x38, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                         0x00, 0x00, 0x00, 0x00, 0xc2, 0x00,};
+
 bool get_report_hid(int reportID, char **report, int *len) {
     switch (reportID) {
         case 0:
@@ -256,22 +265,22 @@ bool get_report_hid(int reportID, char **report, int *len) {
             *len = sizeof(hid0_report_desc);
             break;
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
-        case 1:
-            *report = hid1_report_desc;
-            *len = sizeof(hid1_report_desc);
-            break;
+            case 1:
+                *report = hid1_report_desc;
+                *len = sizeof(hid1_report_desc);
+                break;
 #endif
 #if CONFIG_USB_HID_DEVICE_COUNT > 2
-        case 2:
-            *report = hid2_report_desc;
-            *len = sizeof(hid2_report_desc);
-            break;
+            case 2:
+                *report = hid2_report_desc;
+                *len = sizeof(hid2_report_desc);
+                break;
 #endif
 #if CONFIG_USB_HID_DEVICE_COUNT > 3
-        case 3:
-            *report = hid3_report_desc;
-            *len = sizeof(hid3_report_desc);
-            break;
+            case 3:
+                *report = hid3_report_desc;
+                *len = sizeof(hid3_report_desc);
+                break;
 #endif
         default:
             return false;
