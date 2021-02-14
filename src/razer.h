@@ -9,16 +9,16 @@
 union transaction_id_union {
     unsigned char id;
     struct transaction_parts {
-        unsigned char device : 3;
-        unsigned char id : 5;
+        unsigned char device: 3;
+        unsigned char id: 5;
     } parts;
 };
 
 union command_id_union {
     unsigned char id;
     struct command_id_parts {
-        unsigned char direction : 1;
-        unsigned char id : 7;
+        unsigned char direction: 1;
+        unsigned char id: 7;
     } parts;
 };
 
@@ -52,11 +52,24 @@ struct razer_report {
     unsigned char reserved; /*0x0*/
 };
 
+struct led {
+    char r, g, b;
+};
 
 struct razer_context {
     bool serial_requested;
     struct razer_report current_report;
     uint8_t state;
+    char brightness[256];
+    struct led row[4][16];
+};
+
+
+struct row_req {
+    char skip[2];
+    char row;
+    char first, last;
+    struct led leds[16];
 };
 
 extern struct razer_context gContext;
@@ -68,5 +81,7 @@ extern struct razer_context gContext;
 
 bool get_report_hid(int reportID, char **report, int *len);
 
+#define RAZER_REPORT_LENGTH 90
+extern char serial[RAZER_REPORT_LENGTH];
 
 #endif //HID_MOUSE_RAZER_H

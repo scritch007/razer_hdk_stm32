@@ -108,8 +108,6 @@ char start2_report[28] = {0x03, 0x01, 0x00, 0x04, 0x8d, 0x00, 0x00, 0xf8, 0x6f, 
                           0xe8, 0x03, 0x00, 0x00, 0x04,
                           0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x01, 0x00,};
 
-extern char serial[90];
-
 int get_report_cb(int ID, const struct device *dev_data,
                   struct usb_setup_packet *setup, int32_t *len,
                   uint8_t **data) {
@@ -203,6 +201,21 @@ int set_report(int id, const struct device *dev_data,
     int size = *len;
 
     LOG_HEXDUMP_INF(*data, size, "Set Report");
+    if (*len == 90) {
+        switch ((*data)[1]) {
+            case 0x08:
+            case 0x1f:
+                return parse_08_requests(id, dev_data, setup, len, data);
+            case 0x0c:
+                gContext.state = STATE_START;
+                break;
+            default:
+                LOG_ERR("Not supported");
+                return -ENOTSUP;
+        }
+    }
+
+    LOG_ERR("Unknown set report");
 
     switch ((*data)[0]) {
         case 0x02:
@@ -219,21 +232,7 @@ int set_report(int id, const struct device *dev_data,
             }
             return 0;
         case 0x00:
-            if (*len != 90) {
-                LOG_ERR("Unknown set report");
-            }
-            switch ((*data)[1]) {
-                case 0x08:
-                case 0x1f:
-                    return parse_08_requests(id, dev_data, setup, len, data);
-                case 0x0c:
-                    gContext.state = STATE_START;
-                    break;
-
-                default:
-                    return -ENOTSUP;
-            }
-            break;
+            return 0;
         case 0x01:
             return 0;
         case 0x06:
@@ -242,67 +241,10 @@ int set_report(int id, const struct device *dev_data,
             return 0;
         case 0x86:
             return 0;
-        case 0x08:
-            // This is special ID for requesting information.
-            // Check for the ID. 0x82 means serial number
-            gContext.state = STATE_RUNNING;
-            memcpy(&gContext.current_report, *data, *len);
-            return 0;
-        case 0x1f:
-            gContext.state = STATE_RUNNING;
-            memcpy(&gContext.current_report, *data, *len);
-            return 0;
         default:
             return -ENOTSUP;
     }
 
-
-    // Status Trans Packet Proto DataSize Class CMD Args
-    // 00     3f    0000   00    06       0f    02  010507000100
-    uint8_t dataSize = (*data)[5];
-    uint8_t cmd = (*data)[7];
-    uint8_t effect = (*data)[10];
-
-    switch (cmd) {
-        case 2:
-            break;
-        case 0x86:
-            gContext.state = STATE_RUNNING;
-            memcpy(&gContext.current_report, *data, *len);
-            return 0;
-        case 0x03:
-            return 0;
-        default:
-            LOG_ERR("Unknown command type %02X", cmd);
-            return -ENOTSUP;
-    }
-    if (dataSize < 3) {
-        LOG_ERR("DataSize too small %02X", dataSize);
-        return -ENOTSUP;
-    }
-
-    switch (effect) {
-        case 0x03:
-            LOG_INF("Breath");
-            break;
-        case 0x07:
-            LOG_INF("Starlight");
-            break;
-        case 0x04:
-            LOG_INF("Spectrum");
-            break;
-        case 0x06:
-            LOG_INF("Static");
-            break;
-        case 0x86:
-            LOG_INF("SET DPI??");
-            break;
-        default:
-            LOG_ERR("Unknown effect %02X", effect);
-            return 0;
-    }
-
-    return 0;
 }
 
 int set_report0(const struct device *dev_data,
@@ -337,6 +279,7 @@ static struct hid_ops ops0 = {
         .set_idle = set_idle_cb,
 };
 
+#if CONFIG_USB_HID_DEVICE_COUNT > 1
 static struct hid_ops ops1 = {
         .get_report = get_report_cb1,
         .get_idle = debug_cb,
@@ -344,6 +287,9 @@ static struct hid_ops ops1 = {
         .set_report = set_report1,
         .set_idle = set_idle_cb,
 };
+#endif
+
+#if CONFIG_USB_HID_DEVICE_COUNT > 2
 
 static struct hid_ops ops2 = {
         .get_report = get_report_cb2,
@@ -352,7 +298,8 @@ static struct hid_ops ops2 = {
         .set_report = set_report2,
         .set_idle = set_idle_cb,
 };
-
+#endif
+#if CONFIG_USB_HID_DEVICE_COUNT > 3
 static struct hid_ops ops3 = {
         .get_report = get_report_cb3,
         .get_idle = debug_cb,
@@ -360,7 +307,7 @@ static struct hid_ops ops3 = {
         .set_report = set_report3,
         .set_idle = set_idle_cb,
 };
-
+#endif
 
 void main(void) {
     int ret;
