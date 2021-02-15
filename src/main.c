@@ -13,6 +13,7 @@
 
 #include "razer.h"
 #include "set_report.h"
+#include "strip.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
@@ -21,6 +22,7 @@ static volatile uint8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);    /* starts off "not available" */
 static struct gpio_callback callback[4];
 
+#define DELAY_TIME K_MSEC(10)
 
 #define MOUSE_BTN_REPORT_POS    0
 #define MOUSE_X_REPORT_POS    1
@@ -205,8 +207,8 @@ int set_report(int id, const struct device *dev_data,
         switch ((*data)[1]) {
             case 0x08:
             case 0x1f:
-                return parse_08_requests(id, dev_data, setup, len, data);
             case 0x0c:
+                return parse_08_requests(id, dev_data, setup, len, data);
                 gContext.state = STATE_START;
                 break;
             default:
@@ -215,7 +217,7 @@ int set_report(int id, const struct device *dev_data,
         }
     }
 
-    LOG_ERR("Unknown set report");
+    LOG_ERR("Unknown set report %d", *len);
 
     switch ((*data)[0]) {
         case 0x02:
@@ -312,7 +314,26 @@ static struct hid_ops ops3 = {
 void main(void) {
     int ret;
     uint8_t report[4] = {0x00};
-    const struct device *hid0_dev, *hid1_dev, *hid2_dev, *hid3_dev;
+    const struct device *hid0_dev, *strip
+#if CONFIG_USB_HID_DEVICE_COUNT > 1
+    ,*hid1_dev
+#endif
+#if CONFIG_USB_HID_DEVICE_COUNT > 2
+    ,*hid2_dev
+#endif
+#if CONFIG_USB_HID_DEVICE_COUNT > 3
+    ,* hid3_dev
+#endif
+    ;
+
+    strip = device_get_binding(STRIP_LABEL);
+    if (strip) {
+        LOG_INF("Found LED strip device %s", STRIP_LABEL);
+    } else {
+        LOG_ERR("LED strip device %s not found", STRIP_LABEL);
+        return;
+    }
+
 
     hid0_dev = device_get_binding("HID_0");
     if (hid0_dev == NULL) {
@@ -400,35 +421,31 @@ void main(void) {
         return;
     }
 
-    while (true) {
-        report[MOUSE_BTN_REPORT_POS] = status[MOUSE_BTN_REPORT_POS];
-        report[MOUSE_X_REPORT_POS] = status[MOUSE_X_REPORT_POS];
-        status[MOUSE_X_REPORT_POS] = 0U;
-        report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
-        status[MOUSE_Y_REPORT_POS] = 0U;
-        ret = hid_int_ep_write(hid0_dev, report, sizeof(report), NULL);
+    report[MOUSE_BTN_REPORT_POS] = status[MOUSE_BTN_REPORT_POS];
+    report[MOUSE_X_REPORT_POS] = status[MOUSE_X_REPORT_POS];
+    status[MOUSE_X_REPORT_POS] = 0U;
+    report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
+    status[MOUSE_Y_REPORT_POS] = 0U;
+    ret = hid_int_ep_write(hid0_dev, report, sizeof(report), NULL);
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
-        ret = hid_int_ep_write(hid1_dev, report, sizeof(report), NULL);
+    ret = hid_int_ep_write(hid1_dev, report, sizeof(report), NULL);
 #endif //CONFIG_USB_HID_DEVICE_COUNT 1
 #if CONFIG_USB_HID_DEVICE_COUNT > 2
-        ret = hid_int_ep_write(hid2_dev, report, sizeof(report), NULL);
+    ret = hid_int_ep_write(hid2_dev, report, sizeof(report), NULL);
 #endif //CONFIG_USB_HID_DEVICE_COUNT 2
 #if CONFIG_USB_HID_DEVICE_COUNT > 3
-        ret = hid_int_ep_write(hid3_dev, report, sizeof(report), NULL);
+    ret = hid_int_ep_write(hid3_dev, report, sizeof(report), NULL);
 #endif //CONFIG_USB_HID_DEVICE_COUNT 3
 
-        k_sem_take(&sem, K_FOREVER);
 
-        report[MOUSE_BTN_REPORT_POS] = status[MOUSE_BTN_REPORT_POS];
-        report[MOUSE_X_REPORT_POS] = status[MOUSE_X_REPORT_POS];
-        status[MOUSE_X_REPORT_POS] = 0U;
-        report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
-        status[MOUSE_Y_REPORT_POS] = 0U;
-        ret = hid_int_ep_write(hid0_dev, report, sizeof(report), NULL);
-        if (ret) {
-            LOG_ERR("HID write error, %d", ret);
+    while (true) {
+        k_sleep(DELAY_TIME);
+        //LOG_HEXDUMP_INF(&(gContext.row[0][0]), STRIP_NUM_PIXELS*sizeof(struct led_rgb), "Applying");
+        int rc = led_strip_update_rgb(strip, &(gContext.row[0][0]), STRIP_NUM_PIXELS);
+
+        if (rc) {
+            LOG_ERR("couldn't update strip: %d", rc);
         }
-
     }
 }
 

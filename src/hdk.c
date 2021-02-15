@@ -45,18 +45,18 @@ char serial[RAZER_REPORT_LENGTH] = {
 bool get_report_hid(int reportID, char **report, int *len) {
     switch (reportID) {
         case 0:
-            *report = hid0_report_desc;
+            *report = (char *) hid0_report_desc;
             *len = sizeof(hid0_report_desc);
             break;
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
             case 1:
-            *report = hid1_report_desc;
+            *report = (char*)hid1_report_desc;
             *len = sizeof(hid1_report_desc);
             break;
 #endif
 #if CONFIG_USB_HID_DEVICE_COUNT > 2
             case 2:
-            *report = hid2_report_desc;
+            *report = (char*)hid2_report_desc;
             *len = sizeof(hid2_report_desc);
             break;
 #endif

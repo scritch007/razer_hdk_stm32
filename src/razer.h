@@ -5,6 +5,9 @@
 #ifndef HID_MOUSE_RAZER_H
 #define HID_MOUSE_RAZER_H
 
+#include <drivers/led_strip.h>
+
+#include "strip.h"
 
 union transaction_id_union {
     unsigned char id;
@@ -52,24 +55,23 @@ struct razer_report {
     unsigned char reserved; /*0x0*/
 };
 
-struct led {
-    char r, g, b;
-};
-
 struct razer_context {
     bool serial_requested;
     struct razer_report current_report;
     uint8_t state;
     char brightness[256];
-    struct led row[4][16];
+    struct led_rgb row[4][16];
 };
 
+struct rgb {
+    uint8_t r, g, b;
+};
 
 struct row_req {
     char skip[2];
     char row;
     char first, last;
-    struct led leds[16];
+    struct rgb leds[STRIP_NUM_PIXELS];
 };
 
 extern struct razer_context gContext;

@@ -3,13 +3,12 @@
 //
 #include <zephyr.h>
 #include <device.h>
-#include <drivers/gpio.h>
 
 #include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
 
 #include "razer.h"
 #include "set_report.h"
+#include "strip.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(set_report);
@@ -30,7 +29,7 @@ int parse_08_requests(int id, const struct device *dev_data,
             break;
         case 0xB5:
             // Number of plugged in lines
-            report->arguments[1] = 0x10; // Force only one HDK plugged in
+            report->arguments[1] = STRIP_NUM_PIXELS; // Force only one HDK plugged in
             break;
         case 0x84:
             // Get brightness
@@ -61,7 +60,12 @@ int parse_08_requests(int id, const struct device *dev_data,
         case 0x03: {
             // This sets the configuration for the line:
             struct row_req *req = (struct row_req *) &report->arguments;
-            memcpy(&gContext.row[req->row][req->first], &req->leds, req->last - req->first);
+            for (int i = 0; i < (req->last - req->first); i++) {
+                gContext.row[req->row][req->first + i].r = req->leds[i].r;
+                gContext.row[req->row][req->first + i].g = req->leds[i].g;
+                gContext.row[req->row][req->first + i].b = req->leds[i].b;
+            }
+            //memcpy(&gContext.row[req->row][req->first], &req->leds, (req->last - req->first) * sizeof(struct led_rgb));
             LOG_INF("Updating %02X %d, %d", req->row, req->first, req->last - req->first);
             break;
         }

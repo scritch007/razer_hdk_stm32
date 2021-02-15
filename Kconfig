@@ -8,17 +8,9 @@ config USB_DEVICE_REMOTE_WAKEUP
 	default y if NRFX_USBD
 
 
-choice USB_RAZER_TYPE
-    bool "Usb razer type"
-    default HDK
+# Use the SPI driver by default, unless the GPIO driver is
+# specifically configured in.
+config SPI
+	default y
 
-    config MOUSE
-        bool "mouse"
-
-    config HDK
-        bool "hdk"
-
-    config ARGB
-        bool "argb"
-endchoice
 source "Kconfig.zephyr"
