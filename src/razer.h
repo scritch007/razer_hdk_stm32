@@ -54,13 +54,14 @@ struct razer_report {
     unsigned char crc;/*xor'ed bytes of report*/
     unsigned char reserved; /*0x0*/
 };
+#define HDK_LED_STRIP_LENGTH 16
 
 struct razer_context {
     bool serial_requested;
     struct razer_report current_report;
     uint8_t state;
     char brightness[256];
-    struct led_rgb row[4][16];
+    struct led_rgb row[HDK_LED_STRIP_LENGTH*4];
 };
 
 struct rgb {

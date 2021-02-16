@@ -202,7 +202,7 @@ int set_report(int id, const struct device *dev_data,
     /* TODO: Do something */
     int size = *len;
 
-    LOG_HEXDUMP_INF(*data, size, "Set Report");
+    //LOG_HEXDUMP_INF(*data, size, "Set Report");
     if (*len == 90) {
         switch ((*data)[1]) {
             case 0x08:
@@ -314,6 +314,7 @@ static struct hid_ops ops3 = {
 void main(void) {
     int ret;
     uint8_t report[4] = {0x00};
+    struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
     const struct device *hid0_dev, *strip
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
     ,*hid1_dev
@@ -441,7 +442,14 @@ void main(void) {
     while (true) {
         k_sleep(DELAY_TIME);
         //LOG_HEXDUMP_INF(&(gContext.row[0][0]), STRIP_NUM_PIXELS*sizeof(struct led_rgb), "Applying");
-        int rc = led_strip_update_rgb(strip, &(gContext.row[0][0]), STRIP_NUM_PIXELS);
+
+        for (int i = 0; i < HDK_LED_STRIP_LENGTH*4; i++) {
+            row[i].r = (gContext.row[i].r*gContext.brightness[0])/255;
+            row[i].g = (gContext.row[i].g*gContext.brightness[0])/255;
+            row[i].b = (gContext.row[i].b*gContext.brightness[0])/255;
+        }
+
+        int rc = led_strip_update_rgb(strip, &row[0], STRIP_NUM_PIXELS);
 
         if (rc) {
             LOG_ERR("couldn't update strip: %d", rc);
