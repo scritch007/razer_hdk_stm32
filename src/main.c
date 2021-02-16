@@ -10,6 +10,7 @@
 
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
+#include <drivers/hwinfo.h>
 
 #include "razer.h"
 #include "set_report.h"
@@ -208,11 +209,12 @@ int set_report(int id, const struct device *dev_data,
             case 0x08:
             case 0x1f:
             case 0x0c:
+            case 0x3F:
                 return parse_08_requests(id, dev_data, setup, len, data);
                 gContext.state = STATE_START;
                 break;
             default:
-                LOG_ERR("Not supported");
+                LOG_ERR("Not supported %02X", (*data)[1]);
                 return -ENOTSUP;
         }
     }
@@ -311,10 +313,32 @@ static struct hid_ops ops3 = {
 };
 #endif
 
+void generate_serial() {
+    hwinfo_get_device_id(&serial[10], 78);
+    for (int i = 10; i < 88; i++) {
+        if ((serial[i] >= 0x30) && (serial[i] < 0x3A)) {
+
+        } else if ((serial[i] >= 0x41) && (serial[i] < 0x5B)) {
+        } else if ((serial[i] >= 0x61) && (serial[i] < 0x6B)) {
+        } else if (serial[i] == 0) {
+            break;
+        } else {
+            serial[i] = 0x30 + serial[i] % (10);
+        }
+    }
+    LOG_HEXDUMP_INF(&serial[0], 90, "Serial");
+}
+
 void main(void) {
     int ret;
     uint8_t report[4] = {0x00};
     struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
+
+    generate_serial();
+    gContext.current_effect = BREATH;
+    gContext.brightness[0] = 200;
+
+
     const struct device *hid0_dev, *strip
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
     ,*hid1_dev
@@ -443,13 +467,28 @@ void main(void) {
         k_sleep(DELAY_TIME);
         //LOG_HEXDUMP_INF(&(gContext.row[0][0]), STRIP_NUM_PIXELS*sizeof(struct led_rgb), "Applying");
 
-        for (int i = 0; i < HDK_LED_STRIP_LENGTH*4; i++) {
-            row[i].r = (gContext.row[i].r*gContext.brightness[0])/255;
-            row[i].g = (gContext.row[i].g*gContext.brightness[0])/255;
-            row[i].b = (gContext.row[i].b*gContext.brightness[0])/255;
-        }
 
-        int rc = led_strip_update_rgb(strip, &row[0], STRIP_NUM_PIXELS);
+        int rc;
+        switch (gContext.current_effect) {
+            case BREATH:
+                breath(&gContext.effect.breath, &row[0], STRIP_NUM_PIXELS);
+                break;
+            case CUSTOM:
+                for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
+                    row[i].r = gContext.row[i].r;
+                    row[i].g = gContext.row[i].g;
+                    row[i].b = gContext.row[i].b;
+                }
+                break;
+            default:
+                LOG_ERR("Unknown effect");
+        }
+        for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
+            row[i].r = (row[i].r * gContext.brightness[0]) / 255;
+            row[i].g = (row[i].g * gContext.brightness[0]) / 255;
+            row[i].b = (row[i].b * gContext.brightness[0]) / 255;
+        }
+        rc = led_strip_update_rgb(strip, &row[0], STRIP_NUM_PIXELS);
 
         if (rc) {
             LOG_ERR("couldn't update strip: %d", rc);

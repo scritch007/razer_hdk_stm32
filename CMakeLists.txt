@@ -13,5 +13,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hid-mouse)
 
 
-FILE(GLOB app_sources src/*.c)
+FILE(GLOB app_sources src/*.c src/effects/*.c)
 target_sources(app PRIVATE ${app_sources})

@@ -56,12 +56,24 @@ struct razer_report {
 };
 #define HDK_LED_STRIP_LENGTH 16
 
+
+#include "effects/breath.h"
+
+union effect_union {
+    breath_effect breath;
+};
+
+#define BREATH 1
+#define CUSTOM 2
+
 struct razer_context {
     bool serial_requested;
     struct razer_report current_report;
     uint8_t state;
     char brightness[256];
     struct led_rgb row[HDK_LED_STRIP_LENGTH*4];
+    union effect_union effect;
+    uint8_t current_effect;
 };
 
 struct rgb {
