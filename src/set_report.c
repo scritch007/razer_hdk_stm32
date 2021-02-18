@@ -24,10 +24,7 @@ int parse_08_requests(int id, const struct device *dev_data,
     memcpy(&gContext.current_report, *data, *len);
     gContext.state = STATE_RUNNING;
 
-    if (report->transaction_id.id == 0x3f) {
-
-        return 0;
-    }
+    LOG_HEXDUMP_INF(*data, *len, "set report");
 
     switch (report->command_class) {
         case 0x0f: {
@@ -36,10 +33,18 @@ int parse_08_requests(int id, const struct device *dev_data,
                 case 0x84:
                     // Get brightness
                     report->arguments[2] = gContext.brightness[report->arguments[1]];
+
+                    LOG_HEXDUMP_INF(*data, *len, "Get brightness value");
                     return 0;
                 case 0x04:
+
                     // Set brightness or get brightness;
                     gContext.brightness[report->arguments[1]] = report->arguments[2];
+#if CONFIG_USB_RAZER_TYPE == 0
+                    if (report->arguments[1] == 0x00) {
+                        gContext.brightness[0x05] = report->arguments[2];
+                    }
+#endif
                     LOG_HEXDUMP_INF(&report->arguments[0], 80, "Changing brightness for");
                     return 0;
                 case 0x03:
@@ -51,7 +56,6 @@ int parse_08_requests(int id, const struct device *dev_data,
                         gContext.row[req->row * HDK_LED_STRIP_LENGTH + req->first + i].g = req->leds[i].g;
                         gContext.row[req->row * HDK_LED_STRIP_LENGTH + req->first + i].b = req->leds[i].b;
                     }
-                    //memcpy(&gContext.row[req->row][req->first], &req->leds, (req->last - req->first) * sizeof(struct led_rgb));
                     LOG_DBG("Updating %02X %d, %d", req->row, req->first, req->last - req->first);
                     return 0;
                 case 0x02: {
@@ -65,9 +69,12 @@ int parse_08_requests(int id, const struct device *dev_data,
                             LOG_INF("Starlight");
                             break;
                         case 0x04:
+                            LOG_INF("Wave");
+                            break;
+                        case 0x03:
                             LOG_INF("Spectrum");
                             break;
-                        case 0x06:
+                        case 0x01:
                             LOG_INF("Static");
                             break;
                         case 0x86:
@@ -77,10 +84,14 @@ int parse_08_requests(int id, const struct device *dev_data,
                             LOG_INF("SET None");
                             break;
                         default:
-                            LOG_ERR("Unknown effect %02X", report->command_id.id);
+                            LOG_ERR("Unknown effect %02X", report->arguments[2]);
                     }
                     LOG_HEXDUMP_INF(*data, *len, "Effect");
+                    break;
                 }
+                default:
+                    LOG_ERR("Unhandled %02X", report->command_id.id);
+
             }
         }
             break;
@@ -104,14 +115,20 @@ int parse_08_requests(int id, const struct device *dev_data,
                         report->arguments[4] = HDK_LED_STRIP_LENGTH;
                     }
                     break;
+                case 0x04:
+                    // Set mode for the device;
+                    break;
                 default:
-                    LOG_ERR("Unknown report command id %02X", report->command_id.id);
+                    LOG_HEXDUMP_ERR(*data, *len, "Unknown report command id");
             }
             break;
         }
         case 0x03: {
             switch (report->command_id.id) {
-                case 0x82:
+                case 0x83: // Get brightness standard
+                    report->arguments[2] = gContext.brightness[report->arguments[1]];
+                    break;
+                case 0x82: // Get led effect standard
                 case 0x87:
                     // Force answer. Don't know why we have this 0x03
 #if CONFIG_USB_RAZER_TYPE == 1
@@ -119,11 +136,16 @@ int parse_08_requests(int id, const struct device *dev_data,
 #elif CONFIG_USB_RAZER_TYPE == 0
                     report->arguments[2] = 0x05; // 0x05 was on the HDK
 #endif//CONFIG_USB_RAZER_TYPE == 1
+                    report->arguments[2] = 0x03; // 0x05 was on the HDK
                 case 0x85:
                 case 0x86:
                     report->arguments[0] = 0x01;
             }
         }
+            break;
+        default:
+            LOG_INF("Unhandled command class %02X", report->command_class);
+            break;
     }
 
     return 0;

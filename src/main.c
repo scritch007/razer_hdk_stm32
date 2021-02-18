@@ -210,6 +210,7 @@ int set_report(int id, const struct device *dev_data,
             case 0x1f:
             case 0x0c:
             case 0x3F:
+            case 0xFF: // Used by openrazer
                 return parse_08_requests(id, dev_data, setup, len, data);
                 gContext.state = STATE_START;
                 break;
