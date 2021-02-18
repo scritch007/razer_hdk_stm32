@@ -35,11 +35,11 @@ void breath(breath_effect *te, struct led_rgb *pixels, int len) {
     switch (te->stage) {
         case LOW:
             brightness = 0;
-            duration = 50;
+            duration = 2000;
             break;
         case HIGH:
             brightness = 255;
-            duration = 50;
+            duration = 2000;
             break;
         case UP:
             brightness = 255 * delta / duration;
