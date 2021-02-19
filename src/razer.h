@@ -8,6 +8,9 @@
 #include <drivers/led_strip.h>
 
 #include "strip.h"
+#include "effects/breath.h"
+#include "effects/wave.h"
+#include "effects/spectrum.h"
 
 union transaction_id_union {
     unsigned char id;
@@ -57,21 +60,23 @@ struct razer_report {
 #define HDK_LED_STRIP_LENGTH 16
 
 
-#include "effects/breath.h"
-
 union effect_union {
     breath_effect breath;
+    wave_effect wave;
+    spectrum_effect spectrum;
 };
 
 #define BREATH 1
 #define CUSTOM 2
+#define WAVE   3
+#define SPECTRUM 4
 
 struct razer_context {
     bool serial_requested;
     struct razer_report current_report;
     uint8_t state;
     char brightness[18];
-    struct led_rgb row[HDK_LED_STRIP_LENGTH*4];
+    struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
     union effect_union effect;
     uint8_t current_effect;
 };

@@ -15,6 +15,7 @@
 #include "razer.h"
 #include "set_report.h"
 #include "strip.h"
+#include "effects/spectrum.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
@@ -336,7 +337,7 @@ void main(void) {
     struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
 
     generate_serial();
-    gContext.current_effect = BREATH;
+    gContext.current_effect = SPECTRUM;
     gContext.brightness[0] = 200;
 
 
@@ -471,8 +472,14 @@ void main(void) {
 
         int rc;
         switch (gContext.current_effect) {
+            case WAVE:
+                wave(&gContext.effect.wave, &row[0], STRIP_NUM_PIXELS);
+                break;
             case BREATH:
                 breath(&gContext.effect.breath, &row[0], STRIP_NUM_PIXELS);
+                break;
+            case SPECTRUM:
+                spectrum(&gContext.effect.spectrum, &row[0], STRIP_NUM_PIXELS);
                 break;
             case CUSTOM:
                 for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
@@ -481,6 +488,8 @@ void main(void) {
                     row[i].b = gContext.row[i].b;
                 }
                 break;
+
+
             default:
                 LOG_ERR("Unknown effect");
         }

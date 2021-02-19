@@ -9,7 +9,7 @@
 #include "razer.h"
 #include "set_report.h"
 #include "strip.h"
-#include <drivers/hwinfo.h>
+#include "effects/spectrum.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(set_report);
@@ -64,15 +64,20 @@ int parse_08_requests(int id, const struct device *dev_data,
                         case 0x02:
                             LOG_INF("Breath");
                             gContext.current_effect = BREATH;
+                            memset(&gContext.effect.breath,0, sizeof(breath_effect));
                             break;
                         case 0x07:
                             LOG_INF("Starlight");
                             break;
                         case 0x04:
                             LOG_INF("Wave");
+                            gContext.current_effect = WAVE;
+                            memset(&gContext.effect.breath,0, sizeof(wave_effect));
                             break;
                         case 0x03:
                             LOG_INF("Spectrum");
+                            gContext.current_effect = SPECTRUM;
+                            memset(&gContext.effect.breath,0, sizeof(spectrum_effect));
                             break;
                         case 0x01:
                             LOG_INF("Static");
