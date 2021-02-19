@@ -72,21 +72,35 @@ int parse_08_requests(int id, const struct device *dev_data,
                         case 0x04:
                             LOG_INF("Wave");
                             gContext.current_effect = WAVE;
-                            memset(&gContext.effect.breath,0, sizeof(wave_effect));
+                            memset(&gContext.effect.wave,0, sizeof(wave_effect));
                             break;
                         case 0x03:
                             LOG_INF("Spectrum");
                             gContext.current_effect = SPECTRUM;
-                            memset(&gContext.effect.breath,0, sizeof(spectrum_effect));
+                            memset(&gContext.effect.spectrum,0, sizeof(spectrum_effect));
                             break;
                         case 0x01:
                             LOG_INF("Static");
+                            gContext.current_effect = STATIC;
+                            struct led_rgb new_color;
+                            new_color.r = report->arguments[6];
+                            new_color.g = report->arguments[7];
+                            new_color.b = report->arguments[8];
+                            for (int i=0; i < STRIP_NUM_PIXELS; i++) {
+                                memcpy(&gContext.row[i], &new_color, sizeof(struct led_rgb));
+                            }
                             break;
                         case 0x86:
                             LOG_INF("SET DPI??");
                             break;
-                        case 0x00:
+                        case 0x00: {
                             LOG_INF("SET None");
+                            gContext.current_effect = STATIC;
+                            struct led_rgb new_color = {0};
+                            for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
+                                memcpy(&gContext.row[i], &new_color, sizeof(struct led_rgb));
+                            }
+                        }
                             break;
                         default:
                             LOG_ERR("Unknown effect %02X", report->arguments[2]);

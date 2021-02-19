@@ -481,6 +481,8 @@ void main(void) {
             case SPECTRUM:
                 spectrum(&gContext.effect.spectrum, &row[0], STRIP_NUM_PIXELS);
                 break;
+            case NONE:
+            case STATIC:
             case CUSTOM:
                 for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
                     row[i].r = gContext.row[i].r;

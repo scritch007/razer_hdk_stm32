@@ -70,6 +70,8 @@ union effect_union {
 #define CUSTOM 2
 #define WAVE   3
 #define SPECTRUM 4
+#define STATIC 5
+#define NONE 6
 
 struct razer_context {
     bool serial_requested;
