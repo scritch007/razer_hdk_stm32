@@ -81,6 +81,7 @@ struct razer_context {
     struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
     union effect_union effect;
     uint8_t current_effect;
+    bool save;
 };
 
 struct rgb {

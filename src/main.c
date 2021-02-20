@@ -7,10 +7,12 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include "settings/settings.h"
 
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
 #include <drivers/hwinfo.h>
+#include <settings/settings_nvs.h>
 
 #include "razer.h"
 #include "set_report.h"
@@ -22,7 +24,6 @@ LOG_MODULE_REGISTER(main);
 
 static volatile uint8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);    /* starts off "not available" */
-static struct gpio_callback callback[4];
 
 #define DELAY_TIME K_MSEC(10)
 
@@ -194,15 +195,10 @@ int get_protocol(const struct device *dev_data,
     return 0;
 }
 
-char report_temp[90];
-
 int set_report(int id, const struct device *dev_data,
                struct usb_setup_packet *setup, int32_t *len,
                uint8_t **data) {
     LOG_INF("Set report callback %d", id);
-
-    /* TODO: Do something */
-    int size = *len;
 
     //LOG_HEXDUMP_INF(*data, size, "Set Report");
     if (*len == 90) {
@@ -331,14 +327,67 @@ void generate_serial() {
     LOG_HEXDUMP_INF(&serial[0], 90, "Serial");
 }
 
+
+static int foo_settings_set(const char *name, size_t len,
+                            settings_read_cb read_cb, void *cb_arg) {
+    const char *next;
+    int rc;
+    LOG_INF("Saving settings %s", name);
+
+    if (settings_name_steq(name, "context", &next) && !next) {
+        if (len != sizeof(gContext)) {
+            return -EINVAL;
+        }
+
+        rc = read_cb(cb_arg, &gContext, sizeof(gContext));
+        if (rc >= 0) {
+            /* key-value pair was properly read.
+             * rc contains value length.
+             */
+            return 0;
+        }
+        /* read-out error */
+        return rc;
+    }
+    LOG_INF("Couldn't save setting");
+
+    return -ENOENT;
+}
+
+struct settings_handler my_conf = {
+        .name = "foo",
+        .h_set = foo_settings_set
+};
+
+
 void main(void) {
-    int ret;
+    int ret, rc;
     uint8_t report[4] = {0x00};
     struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
 
+
     generate_serial();
     gContext.current_effect = SPECTRUM;
-    gContext.brightness[0] = 200;
+    gContext.brightness[0] = 255 * 50 / 255;
+
+
+    rc = settings_subsys_init();
+    if (rc) {
+        LOG_ERR("settings subsys initialization: fail (err %d)\n", rc);
+        return;
+    }
+
+    rc = settings_register(&my_conf);
+    if (rc) {
+        LOG_ERR("subtree <%s> handler registered: fail (err %d)\n",
+               my_conf.name, rc);
+    }
+
+    rc = settings_load();
+    if (rc) {
+        LOG_ERR("couldn't load settings correctly %d", rc);
+    }
+
 
 
     const struct device *hid0_dev, *strip
@@ -469,8 +518,16 @@ void main(void) {
         k_sleep(DELAY_TIME);
         //LOG_HEXDUMP_INF(&(gContext.row[0][0]), STRIP_NUM_PIXELS*sizeof(struct led_rgb), "Applying");
 
+        if (gContext.save) {
+            gContext.save = false;
+            LOG_INF("Saving config");
+            rc = settings_save_one("foo/context", &gContext, sizeof(gContext));
+            if (rc != 0){
+                LOG_ERR("Saving error %d", rc);
+            }
 
-        int rc;
+        }
+;
         switch (gContext.current_effect) {
             case WAVE:
                 wave(&gContext.effect.wave, &row[0], STRIP_NUM_PIXELS);

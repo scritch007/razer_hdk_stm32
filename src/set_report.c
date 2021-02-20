@@ -34,7 +34,6 @@ int parse_08_requests(int id, const struct device *dev_data,
                     // Get brightness
                     report->arguments[2] = gContext.brightness[report->arguments[1]];
 
-                    LOG_HEXDUMP_INF(*data, *len, "Get brightness value");
                     return 0;
                 case 0x04:
 
@@ -45,7 +44,7 @@ int parse_08_requests(int id, const struct device *dev_data,
                         gContext.brightness[0x05] = report->arguments[2];
                     }
 #endif
-                    LOG_HEXDUMP_INF(&report->arguments[0], 80, "Changing brightness for");
+                    gContext.save = true;
                     return 0;
                 case 0x03:
                     gContext.current_effect = CUSTOM;
@@ -73,6 +72,7 @@ int parse_08_requests(int id, const struct device *dev_data,
                             LOG_INF("Wave");
                             gContext.current_effect = WAVE;
                             memset(&gContext.effect.wave,0, sizeof(wave_effect));
+                            gContext.effect.wave.direction = report->arguments[3];
                             break;
                         case 0x03:
                             LOG_INF("Spectrum");
@@ -105,7 +105,7 @@ int parse_08_requests(int id, const struct device *dev_data,
                         default:
                             LOG_ERR("Unknown effect %02X", report->arguments[2]);
                     }
-                    LOG_HEXDUMP_INF(*data, *len, "Effect");
+                    gContext.save = report->arguments[0]==1;
                     break;
                 }
                 default:

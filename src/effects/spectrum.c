@@ -42,11 +42,6 @@ void spectrum(spectrum_effect *te, struct led_rgb *pixels, int len) {
         new_color.r = update_color(next_c.r, current_c.r, elapsed);
         new_color.g = update_color(next_c.g, current_c.g, elapsed);
         new_color.b = update_color(next_c.b, current_c.b, elapsed);
-
-        LOG_HEXDUMP_INF(&current_c, sizeof(struct led_rgb), "Spectrum current");
-        LOG_HEXDUMP_INF(&new_color, sizeof(struct led_rgb), "Spectrum");
-        LOG_HEXDUMP_INF(&next_c, sizeof(struct led_rgb), "Spectrum next");
-
     }
     for (int i = 0; i < len; i++) {
         memcpy(&pixels[i], &new_color, sizeof(struct led_rgb));
