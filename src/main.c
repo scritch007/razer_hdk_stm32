@@ -332,14 +332,13 @@ static int foo_settings_set(const char *name, size_t len,
                             settings_read_cb read_cb, void *cb_arg) {
     const char *next;
     int rc;
-    LOG_INF("Saving settings %s", name);
-
+    
     if (settings_name_steq(name, "context", &next) && !next) {
-        if (len != sizeof(gContext)) {
+        if (len != sizeof(gContext.config)) {
             return -EINVAL;
         }
 
-        rc = read_cb(cb_arg, &gContext, sizeof(gContext));
+        rc = read_cb(cb_arg, &gContext.config, sizeof(gContext.config));
         if (rc >= 0) {
             /* key-value pair was properly read.
              * rc contains value length.
@@ -367,8 +366,8 @@ void main(void) {
 
 
     generate_serial();
-    gContext.current_effect = SPECTRUM;
-    gContext.brightness[0] = 255 * 50 / 255;
+    gContext.config.current_effect = SPECTRUM;
+    gContext.config.brightness[0] = 255 * 10 / 100;
 
 
     rc = settings_subsys_init();
@@ -521,22 +520,22 @@ void main(void) {
         if (gContext.save) {
             gContext.save = false;
             LOG_INF("Saving config");
-            rc = settings_save_one("foo/context", &gContext, sizeof(gContext));
+            rc = settings_save_one("foo/context", &gContext.config, sizeof(gContext.config));
             if (rc != 0){
                 LOG_ERR("Saving error %d", rc);
             }
 
         }
 ;
-        switch (gContext.current_effect) {
+        switch (gContext.config.current_effect) {
             case WAVE:
-                wave(&gContext.effect.wave, &row[0], STRIP_NUM_PIXELS);
+                wave(&gContext.config.effect.wave, &row[0], STRIP_NUM_PIXELS);
                 break;
             case BREATH:
-                breath(&gContext.effect.breath, &row[0], STRIP_NUM_PIXELS);
+                breath(&gContext.config.effect.breath, &row[0], STRIP_NUM_PIXELS);
                 break;
             case SPECTRUM:
-                spectrum(&gContext.effect.spectrum, &row[0], STRIP_NUM_PIXELS);
+                spectrum(&gContext.config.effect.spectrum, &row[0], STRIP_NUM_PIXELS);
                 break;
             case NONE:
             case STATIC:
@@ -553,9 +552,9 @@ void main(void) {
                 LOG_ERR("Unknown effect");
         }
         for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
-            row[i].r = (row[i].r * gContext.brightness[0]) / 255;
-            row[i].g = (row[i].g * gContext.brightness[0]) / 255;
-            row[i].b = (row[i].b * gContext.brightness[0]) / 255;
+            row[i].r = (row[i].r * gContext.config.brightness[0]) / 255;
+            row[i].g = (row[i].g * gContext.config.brightness[0]) / 255;
+            row[i].b = (row[i].b * gContext.config.brightness[0]) / 255;
         }
         rc = led_strip_update_rgb(strip, &row[0], STRIP_NUM_PIXELS);
 

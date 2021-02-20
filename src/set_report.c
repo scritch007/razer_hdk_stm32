@@ -32,22 +32,22 @@ int parse_08_requests(int id, const struct device *dev_data,
             switch (report->command_id.id) {
                 case 0x84:
                     // Get brightness
-                    report->arguments[2] = gContext.brightness[report->arguments[1]];
+                    report->arguments[2] = gContext.config.brightness[report->arguments[1]];
 
                     return 0;
                 case 0x04:
 
                     // Set brightness or get brightness;
-                    gContext.brightness[report->arguments[1]] = report->arguments[2];
+                    gContext.config.brightness[report->arguments[1]] = report->arguments[2];
 #if CONFIG_USB_RAZER_TYPE == 0
                     if (report->arguments[1] == 0x00) {
-                        gContext.brightness[0x05] = report->arguments[2];
+                        gContext.config.brightness[0x05] = report->arguments[2];
                     }
 #endif
                     gContext.save = true;
                     return 0;
                 case 0x03:
-                    gContext.current_effect = CUSTOM;
+                    gContext.config.current_effect = CUSTOM;
                     // This sets the configuration for the line:
                     struct row_req *req = (struct row_req *) &report->arguments;
                     for (int i = 0; i <= (req->last - req->first); i++) {
@@ -62,26 +62,26 @@ int parse_08_requests(int id, const struct device *dev_data,
                     switch (report->arguments[2]) {
                         case 0x02:
                             LOG_INF("Breath");
-                            gContext.current_effect = BREATH;
-                            memset(&gContext.effect.breath,0, sizeof(breath_effect));
+                            gContext.config.current_effect = BREATH;
+                            memset(&gContext.config.effect.breath,0, sizeof(breath_effect));
                             break;
                         case 0x07:
                             LOG_INF("Starlight");
                             break;
                         case 0x04:
                             LOG_INF("Wave");
-                            gContext.current_effect = WAVE;
-                            memset(&gContext.effect.wave,0, sizeof(wave_effect));
-                            gContext.effect.wave.direction = report->arguments[3];
+                            gContext.config.current_effect = WAVE;
+                            memset(&gContext.config.effect.wave,0, sizeof(wave_effect));
+                            gContext.config.effect.wave.direction = report->arguments[3];
                             break;
                         case 0x03:
                             LOG_INF("Spectrum");
-                            gContext.current_effect = SPECTRUM;
-                            memset(&gContext.effect.spectrum,0, sizeof(spectrum_effect));
+                            gContext.config.current_effect = SPECTRUM;
+                            memset(&gContext.config.effect.spectrum,0, sizeof(spectrum_effect));
                             break;
                         case 0x01:
                             LOG_INF("Static");
-                            gContext.current_effect = STATIC;
+                            gContext.config.current_effect = STATIC;
                             struct led_rgb new_color;
                             new_color.r = report->arguments[6];
                             new_color.g = report->arguments[7];
@@ -95,7 +95,7 @@ int parse_08_requests(int id, const struct device *dev_data,
                             break;
                         case 0x00: {
                             LOG_INF("SET None");
-                            gContext.current_effect = STATIC;
+                            gContext.config.current_effect = STATIC;
                             struct led_rgb new_color = {0};
                             for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
                                 memcpy(&gContext.row[i], &new_color, sizeof(struct led_rgb));
@@ -145,7 +145,7 @@ int parse_08_requests(int id, const struct device *dev_data,
         case 0x03: {
             switch (report->command_id.id) {
                 case 0x83: // Get brightness standard
-                    report->arguments[2] = gContext.brightness[report->arguments[1]];
+                    report->arguments[2] = gContext.config.brightness[report->arguments[1]];
                     break;
                 case 0x82: // Get led effect standard
                 case 0x87:

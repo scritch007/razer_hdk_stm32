@@ -73,15 +73,19 @@ union effect_union {
 #define STATIC 5
 #define NONE 6
 
+struct effect_config {
+    union effect_union effect;
+    char brightness[18];
+    uint8_t current_effect;
+};
+
 struct razer_context {
     bool serial_requested;
     struct razer_report current_report;
     uint8_t state;
-    char brightness[18];
     struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
-    union effect_union effect;
-    uint8_t current_effect;
     bool save;
+    struct effect_config config;
 };
 
 struct rgb {
