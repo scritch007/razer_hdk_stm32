@@ -62,46 +62,36 @@ int parse_08_requests(int id, const struct device *dev_data,
                     switch (report->arguments[2]) {
                         case 0x02:
                             LOG_INF("Breath");
-                            gContext.config.current_effect = BREATH;
-                            memset(&gContext.config.effect.breath,0, sizeof(breath_effect));
+                            set_effect(BREATH, true);
                             break;
                         case 0x07:
                             LOG_INF("Starlight");
                             break;
                         case 0x04:
                             LOG_INF("Wave");
-                            gContext.config.current_effect = WAVE;
-                            memset(&gContext.config.effect.wave,0, sizeof(wave_effect));
+                            set_effect(WAVE, true);
                             gContext.config.effect.wave.direction = report->arguments[3];
                             break;
                         case 0x03:
                             LOG_INF("Spectrum");
-                            gContext.config.current_effect = SPECTRUM;
-                            memset(&gContext.config.effect.spectrum,0, sizeof(spectrum_effect));
+                            set_effect(WAVE, true);
                             break;
                         case 0x01:
                             LOG_INF("Static");
-                            gContext.config.current_effect = STATIC;
-                            struct led_rgb new_color;
-                            new_color.r = report->arguments[6];
-                            new_color.g = report->arguments[7];
-                            new_color.b = report->arguments[8];
-                            for (int i=0; i < STRIP_NUM_PIXELS; i++) {
-                                memcpy(&gContext.row[i], &new_color, sizeof(struct led_rgb));
-                            }
+                            set_effect(STATIC, true);
+                            gContext.config.effect.static_.color.r = report->arguments[6];
+                            gContext.config.effect.static_.color.g = report->arguments[7];
+                            gContext.config.effect.static_.color.b = report->arguments[8];
                             break;
                         case 0x86:
                             LOG_INF("SET DPI??");
                             break;
                         case 0x00: {
                             LOG_INF("SET None");
-                            gContext.config.current_effect = STATIC;
-                            struct led_rgb new_color = {0};
-                            for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
-                                memcpy(&gContext.row[i], &new_color, sizeof(struct led_rgb));
-                            }
-                        }
+                            set_effect(STATIC, true);
+                            // None is static with no led set.
                             break;
+                        }
                         default:
                             LOG_ERR("Unknown effect %02X", report->arguments[2]);
                     }

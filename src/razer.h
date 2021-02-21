@@ -8,6 +8,7 @@
 #include <drivers/led_strip.h>
 
 #include "strip.h"
+#include "effects/effects.h"
 #include "effects/breath.h"
 #include "effects/wave.h"
 #include "effects/spectrum.h"
@@ -59,22 +60,8 @@ struct razer_report {
 };
 #define HDK_LED_STRIP_LENGTH 16
 
-
-union effect_union {
-    breath_effect breath;
-    wave_effect wave;
-    spectrum_effect spectrum;
-};
-
-#define BREATH 1
-#define CUSTOM 2
-#define WAVE   3
-#define SPECTRUM 4
-#define STATIC 5
-#define NONE 6
-
 struct effect_config {
-    union effect_union effect;
+    effect_union effect;
     char brightness[18];
     uint8_t current_effect;
 };
@@ -86,6 +73,7 @@ struct razer_context {
     struct led_rgb row[HDK_LED_STRIP_LENGTH * 4];
     bool save;
     struct effect_config config;
+    apply_effect apply;
 };
 
 struct rgb {
@@ -110,5 +98,7 @@ bool get_report_hid(int reportID, char **report, int *len);
 
 #define RAZER_REPORT_LENGTH 90
 extern char serial[RAZER_REPORT_LENGTH];
+
+void set_effect(int effect, bool erase);
 
 #endif //HID_MOUSE_RAZER_H

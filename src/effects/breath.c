@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(breath);
 #include <sys/util.h>
 
 #include "breath.h"
+#include "effects.h"
 
 
 void apply_brightness(struct led_rgb *led, int brightness) {
@@ -22,9 +23,10 @@ void apply_brightness(struct led_rgb *led, int brightness) {
     led->g = (led->g * brightness) / 255;
 }
 
-void breath(breath_effect *te, struct led_rgb *pixels, int len) {
+void breath(effect_union *eu, struct led_rgb *pixels, int len) {
+    breath_effect *te = &eu->breath;
     struct led_rgb dimmed_color = colors[te->color];
-    if (te->timestamp == 0){
+    if (te->timestamp == 0) {
         te->timestamp = k_uptime_get();
     }
 

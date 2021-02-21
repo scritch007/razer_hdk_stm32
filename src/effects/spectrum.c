@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(spectrum);
 #include <drivers/led_strip.h>
 #include <sys/util.h>
 
-#include "spectrum.h"
+#include "effects.h"
 
 #define SPECTRUM_RAMP_UP 1000
 #define SPECTRUM_HIGH 1000
@@ -26,7 +26,8 @@ int8_t update_color(uint8_t next, uint8_t current, int elapsed) {
     return next;
 }
 
-void spectrum(spectrum_effect *te, struct led_rgb *pixels, int len) {
+void spectrum(effect_union *eu, struct led_rgb *pixels, int len) {
+    spectrum_effect *te = &eu->spectrum;
     int64_t now = k_uptime_get();
     if (te->timestamp == 0) {
         te->timestamp = k_uptime_get();

@@ -332,7 +332,7 @@ static int foo_settings_set(const char *name, size_t len,
                             settings_read_cb read_cb, void *cb_arg) {
     const char *next;
     int rc;
-    
+
     if (settings_name_steq(name, "context", &next) && !next) {
         if (len != sizeof(gContext.config)) {
             return -EINVAL;
@@ -359,6 +359,32 @@ struct settings_handler my_conf = {
 };
 
 
+void set_effect(int type, bool erase) {
+    if (erase) {
+        memset(&gContext.config.effect, 0, sizeof(effect_union));
+    }
+    switch (type) {
+        case BREATH:
+            gContext.config.current_effect = BREATH;
+            gContext.apply = breath;
+            break;
+        case WAVE:
+            gContext.config.current_effect = WAVE;
+            gContext.apply = wave;
+            break;
+        case SPECTRUM:
+            gContext.config.current_effect = SPECTRUM;
+            gContext.apply = spectrum;
+            break;
+        case STATIC:
+        case NONE:
+            gContext.config.current_effect = STATIC;
+            gContext.apply = static_;
+            break;
+    }
+}
+
+
 void main(void) {
     int ret, rc;
     uint8_t report[4] = {0x00};
@@ -379,7 +405,7 @@ void main(void) {
     rc = settings_register(&my_conf);
     if (rc) {
         LOG_ERR("subtree <%s> handler registered: fail (err %d)\n",
-               my_conf.name, rc);
+                my_conf.name, rc);
     }
 
     rc = settings_load();
@@ -387,7 +413,8 @@ void main(void) {
         LOG_ERR("couldn't load settings correctly %d", rc);
     }
 
-
+    // restart effect without erasing config
+    set_effect(gContext.config.current_effect, false);
 
     const struct device *hid0_dev, *strip
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
@@ -521,36 +548,24 @@ void main(void) {
             gContext.save = false;
             LOG_INF("Saving config");
             rc = settings_save_one("foo/context", &gContext.config, sizeof(gContext.config));
-            if (rc != 0){
+            if (rc != 0) {
                 LOG_ERR("Saving error %d", rc);
             }
 
-        }
-;
-        switch (gContext.config.current_effect) {
-            case WAVE:
-                wave(&gContext.config.effect.wave, &row[0], STRIP_NUM_PIXELS);
-                break;
-            case BREATH:
-                breath(&gContext.config.effect.breath, &row[0], STRIP_NUM_PIXELS);
-                break;
-            case SPECTRUM:
-                spectrum(&gContext.config.effect.spectrum, &row[0], STRIP_NUM_PIXELS);
-                break;
-            case NONE:
-            case STATIC:
-            case CUSTOM:
-                for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
-                    row[i].r = gContext.row[i].r;
-                    row[i].g = gContext.row[i].g;
-                    row[i].b = gContext.row[i].b;
-                }
-                break;
+        };
 
-
-            default:
-                LOG_ERR("Unknown effect");
+        // Check if there is an apply method defined.
+        // If so call it else only copy context row to new row.
+        if (gContext.apply != NULL) {
+            gContext.apply(&gContext.config.effect, &row[0], STRIP_NUM_PIXELS);
+        } else {
+            for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
+                row[i].r = gContext.row[i].r;
+                row[i].g = gContext.row[i].g;
+                row[i].b = gContext.row[i].b;
+            }
         }
+
         for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
             row[i].r = (row[i].r * gContext.config.brightness[0]) / 255;
             row[i].g = (row[i].g * gContext.config.brightness[0]) / 255;

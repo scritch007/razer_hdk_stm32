@@ -8,7 +8,8 @@ LOG_MODULE_REGISTER(wave);
 
 #include <drivers/led_strip.h>
 #include <sys/util.h>
-#include "wave.h"
+
+#include "effects.h"
 
 
 uint8_t *Wheel(uint8_t wheel_pos, uint8_t direction) {
@@ -46,7 +47,8 @@ uint8_t *Wheel(uint8_t wheel_pos, uint8_t direction) {
 }
 
 
-void wave(wave_effect *te, struct led_rgb *pixels, int len) {
+void wave(effect_union *eu, struct led_rgb *pixels, int len) {
+    wave_effect *te = &eu->wave;
     uint8_t *c;
     uint8_t factor = 5;
 
