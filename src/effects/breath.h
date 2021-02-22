@@ -11,10 +11,11 @@
 #define LOW 3
 
 typedef struct {
+    int64_t timestamp;
     size_t color;
-    int timestamp;
-    int stage;
-    int rc;
+    uint8_t stage;
+    uint8_t rc;
+    int duration;
 } breath_effect;
 
 #endif //LED_WS2812_BREATH_H

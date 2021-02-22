@@ -9,7 +9,6 @@
 #include "razer.h"
 #include "set_report.h"
 #include "strip.h"
-#include "effects/spectrum.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(set_report);
@@ -55,7 +54,7 @@ int parse_08_requests(int id, const struct device *dev_data,
                         gContext.row[req->row * HDK_LED_STRIP_LENGTH + req->first + i].g = req->leds[i].g;
                         gContext.row[req->row * HDK_LED_STRIP_LENGTH + req->first + i].b = req->leds[i].b;
                     }
-                    LOG_DBG("Updating %02X %d, %d", req->row, req->first, req->last - req->first);
+                    gContext.apply = NULL;
                     return 0;
                 case 0x02: {
                     // Set effect now we need to dissect the effect.
@@ -74,7 +73,7 @@ int parse_08_requests(int id, const struct device *dev_data,
                             break;
                         case 0x03:
                             LOG_INF("Spectrum");
-                            set_effect(WAVE, true);
+                            set_effect(SPECTRUM, true);
                             break;
                         case 0x01:
                             LOG_INF("Static");

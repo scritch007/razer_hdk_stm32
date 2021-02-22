@@ -369,6 +369,7 @@ void main(void) {
     generate_serial();
     gContext.config.current_effect = SPECTRUM;
     gContext.config.brightness[0] = 255 * 10 / 100;
+    gContext.config.brightness[5] = 255 * 10 / 100;
 
 
     rc = settings_subsys_init();

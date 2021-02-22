@@ -15,19 +15,11 @@ LOG_MODULE_REGISTER(wave);
 uint8_t *Wheel(uint8_t wheel_pos, uint8_t direction) {
     static uint8_t c[3];
 
-    /*switch (direction) {
-        case 1:
-            wheel_pos = 255 - wheel_pos;
-            break;
-        case 2:
-            break;
-    }*/
-
-    if (wheel_pos < 10) {
-        c[0] = 0;
-        c[1] = 0;
-        c[2] = 0;
-    } else if (wheel_pos < 85) {
+    /* if (wheel_pos < 10) {
+         c[0] = 0;
+         c[1] = 0;
+         c[2] = 0;
+     } else */if (wheel_pos < 85) {
         c[0] = wheel_pos * 3;
         c[1] = 255 - wheel_pos * 3;
         c[2] = 0;
