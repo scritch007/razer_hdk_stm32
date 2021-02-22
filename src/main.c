@@ -6,18 +6,15 @@
  */
 #include <zephyr.h>
 #include <device.h>
-#include <drivers/gpio.h>
 #include "settings/settings.h"
 
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
 #include <drivers/hwinfo.h>
-#include <settings/settings_nvs.h>
 
 #include "razer.h"
 #include "set_report.h"
 #include "strip.h"
-#include "effects/spectrum.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
@@ -79,25 +76,6 @@ unsigned char razer_calculate_crc(struct razer_report *report) {
     }
 
     return crc;
-}
-
-/**
- * Get initialised razer report
- */
-struct razer_report get_razer_report(unsigned char command_class, unsigned char command_id, unsigned char data_size) {
-    struct razer_report new_report = {0};
-    memset(&new_report, 0, sizeof(struct razer_report));
-
-    new_report.status = 0x00;
-    new_report.transaction_id.parts.device = 0x01;
-    new_report.transaction_id.parts.id = 0x02;
-    new_report.remaining_packets = 0x00;
-    new_report.protocol_type = 0xd4;
-    new_report.command_class = command_class;
-    new_report.command_id.id = command_id;
-    new_report.data_size = data_size;
-
-    return new_report;
 }
 
 struct razer_context gContext = {0};
@@ -200,7 +178,6 @@ int set_report(int id, const struct device *dev_data,
                uint8_t **data) {
     LOG_INF("Set report callback %d", id);
 
-    //LOG_HEXDUMP_INF(*data, size, "Set Report");
     if (*len == 90) {
         switch ((*data)[1]) {
             case 0x08:
@@ -209,8 +186,6 @@ int set_report(int id, const struct device *dev_data,
             case 0x3F:
             case 0xFF: // Used by openrazer
                 return parse_08_requests(id, dev_data, setup, len, data);
-                gContext.state = STATE_START;
-                break;
             default:
                 LOG_ERR("Not supported %02X", (*data)[1]);
                 return -ENOTSUP;
@@ -542,7 +517,6 @@ void main(void) {
 
     while (true) {
         k_sleep(DELAY_TIME);
-        //LOG_HEXDUMP_INF(&(gContext.row[0][0]), STRIP_NUM_PIXELS*sizeof(struct led_rgb), "Applying");
 
         if (gContext.save) {
             gContext.save = false;
@@ -578,5 +552,3 @@ void main(void) {
         }
     }
 }
-
-

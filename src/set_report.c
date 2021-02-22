@@ -145,7 +145,7 @@ int parse_08_requests(int id, const struct device *dev_data,
 #elif CONFIG_USB_RAZER_TYPE == 0
                     report->arguments[2] = 0x05; // 0x05 was on the HDK
 #endif//CONFIG_USB_RAZER_TYPE == 1
-                    report->arguments[2] = 0x03; // 0x05 was on the HDK
+                    //report->arguments[2] = 0x03; // 0x05 was on the HDK
                 case 0x85:
                 case 0x86:
                     report->arguments[0] = 0x01;
