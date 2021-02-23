@@ -12,10 +12,11 @@
 
 typedef struct {
     int64_t timestamp;
+    int duration;
+    struct led_rgb colors[2];
     size_t color;
     uint8_t stage;
-    uint8_t rc;
-    int duration;
+    uint8_t color_count;
 } breath_effect;
 
 #endif //LED_WS2812_BREATH_H

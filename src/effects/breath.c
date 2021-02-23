@@ -25,15 +25,19 @@ void apply_brightness(struct led_rgb *led, int brightness) {
 
 void breath(effect_union *eu, struct led_rgb *pixels, int len) {
     breath_effect *te = &eu->breath;
+    uint8_t color_count = te->color_count;
+    if (color_count == 0) {
+        color_count = ARRAY_SIZE(colors);
+    }
     if (te->timestamp == 0) {
         te->timestamp = k_uptime_get();
         te->duration = 1500;
         te->stage = UP;
     }
 
+
     int64_t delta = k_uptime_get() - te->timestamp;
     int brightness = 0;
-
 
     if (delta > te->duration) {
         te->stage++;
@@ -46,7 +50,7 @@ void breath(effect_union *eu, struct led_rgb *pixels, int len) {
             default:
                 te->stage = UP;
                 te->color++;
-                if (te->color == ARRAY_SIZE(colors)) {
+                if (te->color >= color_count) {
                     te->color = 0;
                 }
             case UP:
@@ -72,7 +76,16 @@ void breath(effect_union *eu, struct led_rgb *pixels, int len) {
             break;
     }
 
-    struct led_rgb dimmed_color = colors[te->color];
+    struct led_rgb dimmed_color;
+    switch (te->color_count) {
+        case 0:
+            dimmed_color = colors[te->color];
+            break;
+        case 2:
+        case 1:
+            dimmed_color = te->colors[te->color];
+            break;
+    }
     apply_brightness(&dimmed_color, brightness);
 
     memset(pixels, 0, len);

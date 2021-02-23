@@ -62,6 +62,17 @@ int parse_08_requests(int id, const struct device *dev_data,
                         case 0x02:
                             LOG_INF("Breath");
                             set_effect(BREATH, true);
+                            gContext.config.effect.breath.color_count = report->arguments[3];
+                            switch (gContext.config.effect.breath.color_count) {
+                                case 0x02:
+                                    gContext.config.effect.breath.colors[1].r = report->arguments[9];
+                                    gContext.config.effect.breath.colors[1].g = report->arguments[10];
+                                    gContext.config.effect.breath.colors[1].b = report->arguments[11];
+                                case 0x01:
+                                    gContext.config.effect.breath.colors[0].r = report->arguments[6];
+                                    gContext.config.effect.breath.colors[0].g = report->arguments[7];
+                                    gContext.config.effect.breath.colors[0].b = report->arguments[8];
+                            }
                             break;
                         case 0x07:
                             LOG_INF("Starlight");
