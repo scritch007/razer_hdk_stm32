@@ -1,0 +1,71 @@
+From 1846ce0effcc67fbd9822f0c06b59e81391d2406 Mon Sep 17 00:00:00 2001
+From: Benjamin Legrand <benjamin.legrand@seagate.com>
+Date: Tue, 23 Feb 2021 09:57:10 +0100
+Subject: [PATCH] [HID] Allow changing hid boot and protocol when advertising
+ multiple HID
+
+---
+ include/usb/class/usb_hid.h |  3 +++
+ subsys/usb/class/hid/core.c | 18 ++++++++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/include/usb/class/usb_hid.h b/include/usb/class/usb_hid.h
+index be81e773ed..af85e420ef 100644
+--- a/include/usb/class/usb_hid.h
++++ b/include/usb/class/usb_hid.h
+@@ -447,6 +447,9 @@ int hid_int_ep_read(const struct device *dev, uint8_t *data, uint32_t max_data_l
+ /* Initialize USB HID */
+ int usb_hid_init(const struct device *dev);
+ 
++/* Change Procotol */
++int usb_hid_set_protocol(const struct device *dev, uint8_t boot, uint8_t protocol);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/subsys/usb/class/hid/core.c b/subsys/usb/class/hid/core.c
+index 87f65f556b..3e6b201b1e 100644
+--- a/subsys/usb/class/hid/core.c
++++ b/subsys/usb/class/hid/core.c
+@@ -126,6 +126,7 @@ struct hid_device_info {
+ #endif
+ #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+ 	uint8_t protocol;
++	uint8_t boot;
+ #endif
+ 	bool configured;
+ 	bool suspended;
+@@ -641,6 +642,8 @@ static void hid_interface_config(struct usb_desc_header *head,
+ 
+ 	LOG_DBG("");
+ 
++
++
+ 	desc->if0.bInterfaceNumber = bInterfaceNumber;
+ #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+ 	desc->if0.bNumEndpoints = 2;
+@@ -734,6 +737,21 @@ static int usb_hid_device_init(const struct device *dev)
+ 	return 0;
+ }
+ 
++int usb_hid_set_protocol(const struct device *dev, uint8_t boot, uint8_t protocol) {
++#if CONFIG_USB_HID_BOOT_PROTOCOL
++	struct hid_device_info *hid_dev_data = dev->data;
++	hid_dev_data->boot = boot;
++	hid_dev_data->protocol = protocol;
++	struct usb_cfg_data *cfg = (struct usb_cfg_data *)dev->config;
++    struct usb_if_descriptor *if_desc = (void *)cfg->interface_descriptor;
++    struct usb_hid_config *desc =
++            CONTAINER_OF(if_desc, struct usb_hid_config, if0);
++    desc->if0.bInterfaceSubClass = boot;
++    desc->if0.bInterfaceProtocol = protocol;
++#endif
++    return 0;
++}
++
+ #define DEFINE_HID_DEV_DATA(x, _)					\
+ 	struct hid_device_info usb_hid_dev_data_##x;
+ 
+-- 
+2.27.0
+
