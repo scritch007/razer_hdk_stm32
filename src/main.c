@@ -16,7 +16,7 @@
 #include "set_report.h"
 #include "strip.h"
 
-#define LOG_LEVEL LOG_LEVEL_DBG
+//#define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
 
 static volatile uint8_t status[4];
@@ -176,7 +176,7 @@ int get_protocol(const struct device *dev_data,
 int set_report(int id, const struct device *dev_data,
                struct usb_setup_packet *setup, int32_t *len,
                uint8_t **data) {
-    LOG_INF("Set report callback %d", id);
+    LOG_DBG("Set report callback %d", id);
 
     if (*len == 90) {
         switch ((*data)[1]) {
@@ -309,11 +309,11 @@ static int foo_settings_set(const char *name, size_t len,
     int rc;
 
     if (settings_name_steq(name, "context", &next) && !next) {
-        if (len != sizeof(gContext.config)) {
+        if (len != sizeof(struct effect_config)) {
             return -EINVAL;
         }
 
-        rc = read_cb(cb_arg, &gContext.config, sizeof(gContext.config));
+        rc = read_cb(cb_arg, &gContext.config, sizeof(struct effect_config));
         if (rc >= 0) {
             /* key-value pair was properly read.
              * rc contains value length.
@@ -340,20 +340,20 @@ void set_effect(int type, bool erase) {
     }
     switch (type) {
         case BREATH:
-            gContext.config.current_effect = BREATH;
+            gContext.config.saved_effect = BREATH;
             gContext.apply = breath;
             break;
         case WAVE:
-            gContext.config.current_effect = WAVE;
+            gContext.config.saved_effect = WAVE;
             gContext.apply = wave;
             break;
         case SPECTRUM:
-            gContext.config.current_effect = SPECTRUM;
+            gContext.config.saved_effect = SPECTRUM;
             gContext.apply = spectrum;
             break;
         case STATIC:
         case NONE:
-            gContext.config.current_effect = STATIC;
+            gContext.config.saved_effect = STATIC;
             gContext.apply = static_;
             break;
     }
@@ -367,10 +367,6 @@ void main(void) {
 
 
     generate_serial();
-    gContext.config.current_effect = SPECTRUM;
-    gContext.config.brightness[0] = 255 * 10 / 100;
-    gContext.config.brightness[5] = 255 * 10 / 100;
-
 
     rc = settings_subsys_init();
     if (rc) {
@@ -387,10 +383,16 @@ void main(void) {
     rc = settings_load();
     if (rc) {
         LOG_ERR("couldn't load settings correctly %d", rc);
+        memset(&gContext.config, 0, sizeof(struct effect_config));
+    }
+    if (gContext.config.brightness[0] == 0) {
+        gContext.config.saved_effect = SPECTRUM;
+        gContext.config.brightness[0] = 255 * 10 / 100;
+        gContext.config.brightness[5] = 255 * 10 / 100;
     }
 
     // restart effect without erasing config
-    set_effect(gContext.config.current_effect, false);
+    set_effect(gContext.config.saved_effect, false);
 
     const struct device *hid0_dev, *strip
 #if CONFIG_USB_HID_DEVICE_COUNT > 1
@@ -526,7 +528,6 @@ void main(void) {
             if (rc != 0) {
                 LOG_ERR("Saving error %d", rc);
             }
-
         };
 
         // Check if there is an apply method defined.

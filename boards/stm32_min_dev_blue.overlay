@@ -47,15 +47,15 @@
         /* KB for bootloader */
         boot_partition: partition@0 {
             label = "mcuboot";
-            reg = <0x00000000 0xC000>;
+            reg = <0x00000000 0xF000>;
             read-only;
         };
 
 
         /* Set 6Kb of storage at the end of the 256Kb of flash */
-        storage_partition: partition@C000 {
+        storage_partition: partition@F000 {
             label = "storage";
-            reg = <0x000C000 0x00004000>;
+            reg = <0x000F000 0x00001000>;
         };
     };
 };

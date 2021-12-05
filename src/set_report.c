@@ -10,7 +10,7 @@
 #include "set_report.h"
 #include "strip.h"
 
-#define LOG_LEVEL LOG_LEVEL_DBG
+//#define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(set_report);
 
 
@@ -18,12 +18,12 @@ int parse_08_requests(int id, const struct device *dev_data,
                       struct usb_setup_packet *setup, int32_t *len,
                       uint8_t **data) {
     if (*len < RAZER_REPORT_LENGTH) return -ENOTSUP;
-
+    struct row_req *req;
     struct razer_report *report = &gContext.current_report;
     memcpy(&gContext.current_report, *data, *len);
     gContext.state = STATE_RUNNING;
 
-    LOG_HEXDUMP_INF(*data, *len, "set report");
+    LOG_HEXDUMP_DBG(*data, *len, "set report");
 
     switch (report->command_class) {
         case 0x0f: {
@@ -46,9 +46,9 @@ int parse_08_requests(int id, const struct device *dev_data,
                     gContext.save = true;
                     return 0;
                 case 0x03:
-                    gContext.config.current_effect = CUSTOM;
+                    // gContext.config.saved_effect = CUSTOM;
                     // This sets the configuration for the line:
-                    struct row_req *req = (struct row_req *) &report->arguments;
+                    req = (struct row_req *) &report->arguments;
                     for (int i = 0; i <= (req->last - req->first); i++) {
                         gContext.row[req->row * HDK_LED_STRIP_LENGTH + req->first + i].r = req->leds[i].r;
                         gContext.row[req->row * HDK_LED_STRIP_LENGTH + req->first + i].g = req->leds[i].g;

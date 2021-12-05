@@ -63,7 +63,7 @@ struct razer_report {
 struct effect_config {
     effect_union effect;
     char brightness[18];
-    uint8_t current_effect;
+    uint8_t saved_effect;
 };
 
 struct razer_context {
